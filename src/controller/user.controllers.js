@@ -27,33 +27,33 @@ const generateAccessAndRefreshToken = async (userId) => {
 const registerUser = asyncHandler(async (req, res) => {
   const { name, username, email, password } = req.body;
 
-  if (!name || !username || !email || !password) {
-    throw new ApiError(400, 'All fields are required');
+  if (![name, username, email, password].every(Boolean)) {
+    throw new ApiError(400, "All fields are required");
   }
 
-  const existedUser = await User.findOne({
-    $or: [{ username }, { email }],
-  });
+  try {
+    const user = await User.create({
+      name,
+      username,
+      email,
+      password,
+      role: "USER",
+    });
 
-  if (existedUser) {
-    throw new ApiError(409, 'User already exists');
+    const userResponse = await User.findById(user._id)
+      .select("name username email role");
+
+    return res.status(201).json(
+      new ApiResponse(201, userResponse, "User registered successfully")
+    );
+
+  } catch (error) {
+    // Duplicate key error (MongoDB)
+    if (error.code === 11000) {
+      throw new ApiError(409, "Email or Username already exists");
+    }
+    throw error;
   }
-
-  const user = await User.create({
-    name,
-    username,
-    email,
-    password,
-    role: "USER",
-  });
-
-  const userResponse = user.toObject();
-  delete userResponse.password;
-  // delete userResponse.refreshToken;
-
-  return res
-    .status(201)
-    .json(new ApiResponse(201, userResponse, 'User registered successfully'));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -71,16 +71,47 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid credentials");
   }
 
+  if (user.lockUntil && user.lockUntil > Date.now()) {
+    throw new ApiError(403, "Account locked. Try again later");
+  }
+
   const isPasswordCorrect = await user.isPasswordCorrect(password);
+
   if (!isPasswordCorrect) {
+    const updates = {
+      $inc : {loginAttempts : 1}
+    }
+
+    if (user.loginAttempts + 1 >= 5) {
+      updates.$set = {
+        lockUntil : new Date.now() + 10 * 60 * 1000
+      }
+    }
+
+    await user.updateOne({_id: user._id}, updates);
     throw new ApiError(401, "Invalid credentials");
   }
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
 
-  const userResponse = user.toObject();
-  delete userResponse.password;
-  delete userResponse.refreshToken;
+  await user.updateOne(
+    {_id: user._id},
+    {
+      $set : {
+        loginAttempts: 0,
+        lockUntil: null,
+        refreshToken
+      }
+    }
+  )
+
+  const userResponse = {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    name: user.name,
+    role: user.role
+  };
 
   const cookieOptions = {
     httpOnly: true,
@@ -99,21 +130,21 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(
       new ApiResponse(
         200,
-        { user: userResponse, accessToken, refreshToken },
+        { user: userResponse, accessToken },
         "User logged in successfully"
       )
     );
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  User.updateOne(
+  await User.updateOne(
     { _id: req.user._id },
-    { $unset: { refreshToken: 1 } }
+    { $unset: { refreshToken: 1 } },
   );
 
   const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: true,
     sameSite: "strict"
   };
 
