@@ -38,7 +38,8 @@ const deleteAudioById = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Invalid AudioId");
     }
 
-    const deletedAudio = await Audio.findOneAndDelete({ _id: audioId });
+    const filter = req?.user.role === "ADMIN" ? { _id: audioId } : { _id: audioId, uploadedBy: req?.user._id };
+    const deletedAudio = await Audio.findOneAndDelete(filter);
 
     if (!deletedAudio) {
         throw new ApiError(404, "Audio file not found");
@@ -61,8 +62,9 @@ const updateAudioDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "All are required");
   }
 
+  const filter = req?.user.role === "ADMIN" ? {_id : audioId} : {_id: audioId, uploadedBy: req?.user._id };
   const audio = await Audio.findOneAndUpdate(
-    { _id: audioId, uploadedBy: req.user._id },
+    filter,
     { $set: { title, description, fileUrl } },
     { new: true ,  projection: { title: 1, description: 1 }}
   );

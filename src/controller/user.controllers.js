@@ -48,7 +48,7 @@ const registerUser = asyncHandler(async (req, res) => {
     );
 
   } catch (error) {
-    // Duplicate key error (MongoDB)
+    // Duplicate key error check (MongoDB)
     if (error.code === 11000) {
       throw new ApiError(409, "Email or Username already exists");
     }
