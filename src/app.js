@@ -14,14 +14,17 @@ app.use(cookieParser());
 app.use(express.static("public"));
 
 // import route 
-import postAudioRouter from "./route/postAudio.route.js"
-import userRouter from "./route/auth.route.js"
-import getAudioRouter from "./route/getAudio.route.js"
+import artistRouter from "./route/artist.route.js"
+import authRouter from "./route/auth.route.js"
+import userRouter from "./route/user.route.js"
+import adminRouter from "./route/admin.route.js"
 
 // route declaration
-app.use("/api/v1/artist", postAudioRouter);
-app.use("/api/v1/users", userRouter);
-app.use("/api/v1/music", getAudioRouter);
+app.use("/api/v1/artist", artistRouter);
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/music", userRouter);
+app.use("/api/v1/admin", adminRouter);
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {

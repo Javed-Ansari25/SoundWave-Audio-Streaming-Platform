@@ -1,15 +1,11 @@
-import { Audio } from "../model/audio.model.js";
-import { ApiError } from "../utils/apiError.js";
-import { ApiResponse } from "../utils/apiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../config/cloudinary.js";
+import { Audio } from "../../model/audio.model.js";
+import { ApiError } from "../../utils/apiError.js";
+import { ApiResponse } from "../../utils/apiResponse.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { uploadOnCloudinary } from "../../config/cloudinary.js";
 import mongoose from "mongoose";
 
 const uploadAudio = asyncHandler(async (req, res) => {
-    // if (req.user.role !== "artist") {
-    //   throw new ApiError(403, "You are not allowed to upload audio. Only artist can upload.");
-    // }
-
     const {title, description} = req.body;
     if(!title || !description) {
       throw new ApiError(400, "All field are required");
@@ -45,16 +41,13 @@ const uploadAudio = asyncHandler(async (req, res) => {
 const deleteAudioById = asyncHandler(async (req, res) => {
     const { audioId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(audioId)) {
-        throw new ApiError(400, "Invalid AudioId");
+      throw new ApiError(400, "Invalid AudioId");
     }
 
-    const filter = req.user.role === "admin" ? {_id: audioId} : {_id: audioId, artist: req?.user._id};
-    const deletedAudio = await Audio.findOneAndDelete(filter);
+    const deletedAudio = await Audio.findOneAndDelete({_id: audioId, artist: req?.user._id});
 
     if (!deletedAudio) {
-      throw new ApiError(403,
-        req.user.role === "admin" ? "Audio not found" : "You are not allowed to delete this audio"
-      );
+      throw new ApiError(403, "Audio not found");
     }
 
     return res.status(200).json(
@@ -70,18 +63,14 @@ const updateAudioDetails = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid Audio ID");
   }
 
-  const filter = req.user.role === "admin" ? { _id: audioId } : {_id: audioId, artist: req.user._id};
-
   const audio = await Audio.findOneAndUpdate(
-    filter,
+    {_id: audioId, artist: req.user._id},
     { $set: { title, description, fileUrl } },
     { new: true ,  projection: { title: 1, description: 1 }}
   );
 
   if (!audio) {
-    throw new ApiError(403,
-      req.user.role === "admin"? "Audio not found" : "You are not allowed to update this audio"
-    );
+    throw new ApiError(403, "You are not allowed to update this audio");
   }
 
   return res.status(200).json(
@@ -89,4 +78,34 @@ const updateAudioDetails = asyncHandler(async (req, res) => {
   );
 });
 
-export {uploadAudio, deleteAudioById, updateAudioDetails}
+const togglePublishStatus = asyncHandler(async (req, res) => {
+  const { audioId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(audioId)) {
+    throw new ApiError(400, "Invalid audioId");
+  }
+
+  const audio = await Audio.findOneAndUpdate(
+    {_id: audioId, artist: req.user._id},  
+    
+    // Values ​​are being flipped within the database itself
+    [
+      {
+        $set: {
+          isPublished: { $not: "$isPublished" }
+        }
+      }
+    ],
+    { new: true, updatePipeline: true }
+  );
+
+  if (!audio) {
+    throw new ApiError(404, "Audio not found or unauthorized");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { isPublished: audio.isPublished }, "Publish status toggled successfully")
+  );
+});
+
+export {uploadAudio, deleteAudioById, updateAudioDetails, togglePublishStatus}
