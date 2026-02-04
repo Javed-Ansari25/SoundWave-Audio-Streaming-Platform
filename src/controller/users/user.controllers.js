@@ -2,6 +2,7 @@ import { Audio } from "../../model/audio.model.js";
 import { ApiError } from "../../utils/apiError.js";
 import { ApiResponse } from "../../utils/apiResponse.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
+import mongoose from "mongoose";
 
 const getAudio = asyncHandler(async (req, res) => {
   const page = Number(req.query.page) || 1;
@@ -59,6 +60,7 @@ const getArtistAudios = asyncHandler(async (req, res) => {
     artist: artistId,
     isPublished: true
   })
+  .select("_id fileUrl title description")
   .skip(skip)
   .limit(limit)
   .sort({ createdAt: -1 });

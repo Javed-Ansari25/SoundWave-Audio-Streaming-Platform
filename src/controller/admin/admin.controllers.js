@@ -59,8 +59,10 @@ const getAllAudioForAdmin = asyncHandler(async (req, res) => {
         .limit(Number(limit))
         .sort({ createdAt: -1 });
 
+    const totalAudio = await Audio.countDocuments();
+
     return res.status(200).json(
-        new ApiResponse(200, audios, "All audios fetched for admin")
+        new ApiResponse(200, {audios, totalAudio}, "All audios fetched for admin")
     );
 });
 
@@ -111,7 +113,7 @@ const toggleAudioStatus = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Invalid audioId");
   }
 
-  const audio = await User.findOneAndUpdate(
+  const audio = await Audio.findOneAndUpdate(
     {_id : audioId}, 
     // Values ​​are being flipped within the database itself
     [

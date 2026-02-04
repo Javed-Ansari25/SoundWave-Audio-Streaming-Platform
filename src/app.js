@@ -19,12 +19,12 @@ import authRouter from "./route/auth.route.js"
 import userRouter from "./route/user.route.js"
 import adminRouter from "./route/admin.route.js"
 
-// route declaration
-app.use("/api/v1/artist", artistRouter);
-app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/music", userRouter);
-app.use("/api/v1/admin", adminRouter);
+// route 
 
+app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/artist", artistRouter);
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/admin", adminRouter);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
