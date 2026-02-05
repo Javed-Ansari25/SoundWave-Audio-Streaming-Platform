@@ -38,20 +38,25 @@ const uploadAudio = asyncHandler(async (req, res) => {
     )
 })
 
+// softDelete
 const deleteAudioById = asyncHandler(async (req, res) => {
     const { audioId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(audioId)) {
       throw new ApiError(400, "Invalid AudioId");
     }
 
-    const deletedAudio = await Audio.findOneAndDelete({_id: audioId, artist: req?.user._id});
+    const deletedAudio = await Audio.findOneAndUpdate(
+      {_id: audioId, artist: req?.user._id},
+      {isDelete : true},
+      {new : true}
+    );
 
     if (!deletedAudio) {
       throw new ApiError(403, "Audio not found");
     }
 
     return res.status(200).json(
-      new ApiResponse(200, {}, "Audio file deleted successfully")
+      new ApiResponse(200, {isDelete : deletedAudio.isDelete}, "Audio file deleted successfully")
     );
 });
 

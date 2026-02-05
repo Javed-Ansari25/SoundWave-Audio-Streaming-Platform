@@ -1,7 +1,8 @@
 import verifyJWT from "../middlewares/auth.middleware.js";
 import authorize from "../middlewares/authorize.middleware.js";
 import { 
-    getAdminDashboard, getAllUsersForAdmin, getAllAudioForAdmin, adminDeleteAudio, adminUpdateAudio, toggleAudioStatus
+    getAdminDashboard, getAllUsersForAdmin, getAllAudioForAdmin, adminDeleteAudio,
+    adminUpdateAudio, toggleAudioStatus, toggleUserBlockByAdmin
 } from "../controller/admin/admin.controllers.js";
 
 import { Router } from "express";
@@ -17,5 +18,6 @@ router.route("/users").get(getAllUsersForAdmin);
 router.route("/audio/delete/:audioId").delete(adminDeleteAudio);
 router.route("/audio/update/:audioId").patch(adminUpdateAudio);
 router.route("/audio/:audioId/toggle-status").patch(toggleAudioStatus);
+router.route("/user/block/:userId").patch(toggleUserBlockByAdmin);
 
 export default router

@@ -18,7 +18,7 @@ router.route("/upload-audio").post(
     uploadAudio
 )
 
-router.route("/delete-audio/:audioId").delete(deleteAudioById);
+router.route("/delete-audio/:audioId").patch(deleteAudioById);
 router.route("/update-audio/:audioId").patch(updateAudioDetails);
 router.route("/toggle-status/:audioId").patch(togglePublishStatus);
 

@@ -9,7 +9,7 @@ const getAudio = asyncHandler(async (req, res) => {
   const limit = Number(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  const audio = await Audio.find({ isPublished: true })
+  const audio = await Audio.find({ isPublished: true, isDelete : false })
   .populate("artist", "username")
   .skip(skip)
   .limit(limit)
@@ -58,7 +58,8 @@ const getArtistAudios = asyncHandler(async (req, res) => {
 
   const audios = await Audio.find({
     artist: artistId,
-    isPublished: true
+    isPublished: true,
+    isDelete : false
   })
   .select("_id fileUrl title description")
   .skip(skip)

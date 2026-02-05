@@ -27,11 +27,15 @@ const audioSchema = new mongoose.Schema(
     isPublished: {
       type: Boolean,
       default: true
+    },
+    isDelete: {
+      type: Boolean,
+      default: false
     }
   },
   { timestamps: true }
 );
 
-audioSchema.index({ _id: 1, artist: 1 });
+audioSchema.index({ artist: 1, isPublished: 1, createdAt: -1 });
 
 export const Audio = mongoose.model("Audio", audioSchema);

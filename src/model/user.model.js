@@ -41,6 +41,11 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    isBlocked : {
+      type: Boolean,
+      default: false
+    },
+
     loginAttempts: { 
       type: Number, 
       default: 0 

@@ -106,6 +106,35 @@ const adminUpdateAudio = asyncHandler(async (req, res) => {
   );
 });
 
+const toggleUserBlockByAdmin = asyncHandler(async (req, res) => {
+  const {userId} = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(400, "Invalid userId");
+  }
+
+  const user = await User.findOneAndUpdate(
+    {_id : userId}, 
+    // Values ​​are being flipped within the database itself
+    [
+      {
+        $set: {
+          isBlocked: { $not: "$isBlocked" }
+        }
+      }
+    ],
+    { new: true, updatePipeline: true }
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  return res.status(200).json(
+    new ApiResponse(200, { isBlocked: user.isBlocked }, "User block status updated")
+  ); 
+})
+
 const toggleAudioStatus = asyncHandler(async (req, res) => {
   const { audioId } = req.params;
 
@@ -135,4 +164,7 @@ const toggleAudioStatus = asyncHandler(async (req, res) => {
   );
 });
 
-export {getAdminDashboard, getAllUsersForAdmin, getAllAudioForAdmin, adminDeleteAudio,adminUpdateAudio, toggleAudioStatus}
+export {
+  getAdminDashboard, getAllUsersForAdmin, getAllAudioForAdmin, adminDeleteAudio,
+  adminUpdateAudio, toggleAudioStatus, toggleUserBlockByAdmin
+}

@@ -3,6 +3,7 @@ import { ApiError } from '../utils/apiError.js';
 import { ApiResponse } from '../utils/apiResponse.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { generateTokens, cookieOptions } from "../utils/token.js";
+import { checkUserLoginStatus, handleFailedLogin } from '../utils/security.login.js';
 import jwt from 'jsonwebtoken';
 
 const registerUser = asyncHandler(async (req, res) => {
@@ -52,49 +53,37 @@ const loginUser = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({
     $or: [{ email }, { username }],
-  }).select("+password role username");
+  }).select("+password role username isBlocked loginAttempts lockUntil");
 
   if (!user) {
     throw new ApiError(401, "Invalid credentials");
   }
 
-  if (user.lockUntil && user.lockUntil > Date.now()) {
-    throw new ApiError(403, "Account locked. Try again later");
-  }
+  // account checks
+  checkUserLoginStatus(user);
 
   const isPasswordCorrect = await user.isPasswordCorrect(password);
   if (!isPasswordCorrect) {
-    const updates = {
-      $inc : {loginAttempts : 1}
-    }
-
-    if (user.loginAttempts + 1 >= 5) {
-      updates.$set = {
-        lockUntil : new Date.now() + 10 * 60 * 1000
-      }
-    }
-
-    await user.updateOne({_id: user._id}, updates);
+    await handleFailedLogin(user);
     throw new ApiError(401, "Invalid credentials");
   }
 
   const { accessToken, refreshToken } = await generateTokens(user);
-  await user.updateOne(
-    {_id: user._id},
+  await User.updateOne(
+    { _id: user._id },
     {
-      $set : {
+      $set: {
         loginAttempts: 0,
         lockUntil: null,
-        refreshToken
-      }
+        refreshToken,
+      },
     }
-  )
+  );
 
   const userResponse = {
     _id: user._id,
     username: user.username,
-    name: user.name,
-    role: user.role
+    role: user.role,
   };
 
   return res
@@ -102,16 +91,12 @@ const loginUser = asyncHandler(async (req, res) => {
     .cookie("accessToken", accessToken, cookieOptions)
     .cookie("refreshToken", refreshToken, cookieOptions)
     .json(
-      new ApiResponse(
-        200,
-        { user: userResponse},
-        "User logged in successfully"
-      )
+      new ApiResponse(200, { user: userResponse }, "User logged in successfully")
     );
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  await User.updateOne(
+  const user = await User.updateOne(
     { _id: req.user._id },
     { $unset: { refreshToken: 1 } },
   );
@@ -120,7 +105,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .status(200)
     .clearCookie("accessToken", cookieOptions)
     .clearCookie("refreshToken", cookieOptions)
-    .json(new ApiResponse(200, {}, "User logged out successfully"));
+    .json(new ApiResponse(200, {username : req.user.username}, "User logged out successfully"));
 });
 
 const regenerateAccessAndRefreshToken = asyncHandler(async (req, res) => {
