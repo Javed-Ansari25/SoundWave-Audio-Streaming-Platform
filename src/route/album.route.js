@@ -21,8 +21,8 @@ router.route("/create")
 )
 
 router.route("/add/:albumId/audio/:audioId").post(addAudioToAlbum);
-router.route("/update/:albumId").patch(updateAlbum);
-router.patch("/publish/:albumId").patch(publishAlbumToggle);
+router.route("/update/:albumID").patch(updateAlbum);
+router.route("/publish/:albumID").patch(publishAlbumToggle);
 
 router.route("/delete/:albumId/audio/:audioId").delete(deleteAudioToAlbum);
 router.route("/delete/:albumId").delete(deleteAlbum);
