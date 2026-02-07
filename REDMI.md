@@ -1,12 +1,19 @@
-
----
-
 # 🎵 SoundWave – Audio Streaming Platform (Backend)
 
 **SoundWave** is a **production-ready backend** for a Spotify-like audio streaming platform.
 It supports **role-based access control (Admin / Artist / User)**, secure authentication, audio management, and moderation features using modern backend best practices.
 
 This project is designed to demonstrate **real-world backend architecture**, scalable REST APIs, and professional code organization.
+
+---
+
+## 🌐 Live Base URL
+
+```
+https://soundwave-audio-streaming-platform.onrender.com/api/v1
+```
+
+All APIs are served under the `/api/v1` prefix.
 
 ---
 
@@ -46,7 +53,7 @@ Built for **real-world usage**, backend learning, and portfolio showcasing.
 ### 👤 User
 
 * Register & login securely
-* Browse published content
+* Browse **published content only**
 * Stream audio
 * No content modification access
 
@@ -83,22 +90,74 @@ Built for **real-world usage**, backend learning, and portfolio showcasing.
 * Create & manage posts (Artist)
 * View all posts (Admin)
 * Delete any post (Admin)
-* Publish/unpublish control
+* Publish / unpublish control
 * Ownership-based access checks
 
 ---
 
-### 📊 Admin Dashboard
+## 🔗 Important API Routes
 
-* Total users & artists count
-* Content statistics
-* Centralized admin APIs
-* Secure admin-only routes
-* Clean separation of admin logic
+### 🔑 Auth Routes
+
+```
+POST   /api/v1/auth/register
+POST   /api/v1/auth/login
+POST   /api/v1/auth/logout
+GET    /api/v1/auth/me
+```
 
 ---
 
-### 🛠 Backend Architecture
+### 🎵 Audio Routes
+
+#### Public (User can access)
+
+```
+GET    /api/v1/audios                → Get all published audios
+GET    /api/v1/audios/:audioId       → Get published audio by ID
+```
+
+#### Artist (Auth required)
+
+```
+POST   /api/v1/audios                → Upload audio (Artist only)
+PUT    /api/v1/audios/:audioId       → Update own audio
+DELETE /api/v1/audios/:audioId       → Delete own audio
+```
+
+#### Admin (Auth + Admin role)
+
+```
+GET    /api/v1/admin/audios          → Get all audios (published + unpublished)
+DELETE /api/v1/admin/audios/:audioId → Delete any audio
+```
+
+---
+
+### 📢 Publish / Unpublish Logic
+
+```
+PATCH  /api/v1/admin/audios/:audioId/publish
+PATCH  /api/v1/admin/audios/:audioId/unpublish
+```
+
+* Only **Admin** can publish or unpublish content
+* **Users** can see only `isPublished: true` content
+* **Artists** can view their own unpublished content
+
+---
+
+### 🧑‍💼 Admin Routes
+
+```
+GET    /api/v1/admin/users           → Get all users & artists
+PATCH  /api/v1/admin/users/:id/block → Block user
+PATCH  /api/v1/admin/users/:id/unblock
+```
+
+---
+
+## 🛠 Backend Architecture
 
 * RESTful API design using **Express.js**
 * Modular folder structure (controllers, routes, services)
@@ -138,7 +197,6 @@ Built for **real-world usage**, backend learning, and portfolio showcasing.
 
 ---
 
- 
 ## 🎯 Learning Outcomes
 
 * Real-world RBAC implementation
@@ -155,5 +213,3 @@ Built for **real-world usage**, backend learning, and portfolio showcasing.
 **Javed**
 Backend Developer | Node.js | MongoDB
 📌 Built for learning, practice & real-world backend experience
-
----
