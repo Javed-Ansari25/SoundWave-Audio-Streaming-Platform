@@ -10,6 +10,7 @@ const getAudio = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const audio = await Audio.find({ isPublished: true, isDelete : false })
+  .select("title description fileUrl artist createdAt")
   .populate("artist", "username")
   .skip(skip)
   .limit(limit)
